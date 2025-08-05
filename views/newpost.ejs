@@ -1,0 +1,54 @@
+<%-include("partials/header.ejs") %>
+
+
+<div class="p-1 mb-4 bg-body-tertiary rounded-3">
+   <div class="container-fluid py-5">
+      <form action="/submit" method="POST" class="container mt-0">
+  <h2 class="mb-4 text-center fw-bold">Write Your Blog</h2>
+
+  <div class="mb-3">
+    <label for="title" class="form-label">Title: </label>
+    <input
+      type="text"
+      class="form-control"
+      id="title"
+      name="Title"
+      placeholder="Enter blog title"
+      required
+    />
+  </div>
+
+    <div class="mb-3">
+    <label for="author" class="form-label">Author: </label>
+    <input
+      type="text"
+      class="form-control"
+      id="author"
+      name="Author"
+      placeholder="Enter Author Name"
+      required
+    />
+  </div>
+
+  <div class="mb-3">
+    <label for="content" class="form-label">Content: </label>
+    <textarea
+      class="form-control"
+      id="content"
+      name="Content"
+      rows="4"
+      placeholder="Write your blog content here..."
+      required
+    ></textarea>
+  </div>
+
+  <div class="text-center">
+    <button type="submit" class="btn btn-primary px-5">Post</button>
+  </div>
+</form>
+   </div>
+</div>
+
+
+  
+<%-include("partials/footer.ejs") %>

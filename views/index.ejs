@@ -1,0 +1,31 @@
+<%- include("partials/header.ejs") %>
+
+<div class="p-5 mb-4 bg-body-tertiary rounded-3">
+  <div class="container">
+    <% if (blogs.length > 0) { %>
+      <% blogs.forEach(function(blog) { %>
+        <div class="text-center mb-5">
+          <h4 class="display-6 fw-bold"><%= blog.title %></h4>
+          <p class="fs-6">By <%= blog.author %></p>
+          <p class="fs-6 w-75 mx-auto"><%= blog.content %></p>
+          <div class="d-flex justify-content-center gap-3">
+
+          <form action="/edit/<%= blog.id %>" method="GET" style="display:inline;">
+            <button class="btn btn-primary btn-sm">Update</button> 
+          </form>
+
+          <form action="/delete/<%= blog.id %>" method="POST" style="display:inline;">
+            <input type="hidden" name="_method" value="DELETE">
+            <button class="btn btn-danger btn-sm">Delete</button> 
+          </form>
+
+          </div>
+        </div>
+      <% }); %>
+    <% } else { %>
+      <p class="text-center">No blog posts yet.</p>
+    <% } %>
+  </div>
+</div>
+
+<%- include("partials/footer.ejs") %>
