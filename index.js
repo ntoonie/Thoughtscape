@@ -2,9 +2,22 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import methodOverride from 'method-override';
 import fs from 'fs-extra';
-
+import pg from 'pg';
 const app = express();
 const port = 3000;
+
+const db = new pg.Client({
+    user: "postgres",
+    host: "localhost",
+    database: "blogsite",
+    password: "postgresqlpassword",
+    port: 5432,
+})
+
+db.connect(err => {
+    if (err) console.error('Connection error', err.stack);
+    else console.log('Connected to Database');
+})
 
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({extended: true}));
@@ -17,9 +30,16 @@ app.use(methodOverride('_method'));
 ];
 */
 
-const submit = [];
+//const submit = [];
 
-fs.readFile('public/files/database.txt', 'utf8', (err, data) => {
+async function getBlogs(){
+    const result = await db.query("SELECT * FROM blogs");
+    let blogs = [];
+    blogs = result.rows;
+    return blogs;
+}
+
+/*fs.readFile('public/files/database.txt', 'utf8', (err, data) => {
     if(err) throw err;
 
     const postsRaw = data.split('---'); // Split by separator
@@ -37,8 +57,9 @@ fs.readFile('public/files/database.txt', 'utf8', (err, data) => {
     });
     console.log(submit.length);
 });
+*/
 
-function saveBlogsToFile() {
+/*function saveBlogsToFile() {
   const formatted = submit.map(blog => {
     return `${blog.id}\n${blog.title}\n${blog.author}\n${blog.content}\n---`;
   }).join('\n');
@@ -47,9 +68,10 @@ function saveBlogsToFile() {
     if (err) console.error("Error writing file:", err);
   });
 }
-
-app.get("/", (req, res) => {
-  res.render("index.ejs", {blogs: submit, route: "/"});
+*/
+app.get("/", async (req, res) => {
+  const blogs = await getBlogs();
+  res.render("index.ejs", {blogs: blogs, route: "/"});
 });
 
 
@@ -57,52 +79,60 @@ app.get("/newpost", (req, res) => {
   res.render("newpost.ejs", {route: "/newpost"});
 });
 
-app.post("/submit", (req, res) => {
-  
-   const newBlog = { 
-    id: submit.length + 1,
-    title: req.body.Title,
-    author: req.body.Author,
-    content: req.body.Content,
-   };
-   submit.push(newBlog);
-   saveBlogsToFile();
+app.post("/submit", async (req, res) => {
+    const title =  req.body.Title;
+    const author = req.body.Author;
+    const content = req.body.Content;
+    try {
+      await db.query("INSERT INTO blogs (title, author, blog) VALUES ($1, $2, $3)", [title, author, content]);
+    } catch (err) {
+      console.log(err);
+    }
+    console.log("Inserted into Database Successfully");
    res.redirect("/");
 });
 
-app.get("/edit/:id", (req, res) => {
+app.get("/edit/:id", async (req, res) => {
+  //const index = submit.findIndex(b => b.id === blogId);
+  
+  //if (index === -1) return res.status(404).send("Blog not found");
   const blogId = parseInt(req.params.id);
-  const index = submit.findIndex(b => b.id === blogId);
-  
-  if (index === -1) return res.status(404).send("Blog not found");
-  
-  res.render("edit.ejs", { blog: submit[index], route: "/edit" });
+  try {
+    const result = await db.query("SELECT * FROM blogs WHERE id = $1", [blogId]);
+    if (result.rows.length === 0) return res.status(404).send("Blog not found");
+    res.render("edit.ejs", { blog: result.rows[0], route: "/edit" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error fetching blog");
+  }
 });
 
-app.post("/update/:id", (req, res) => {
-  const blogId = parseInt(req.params.id);
-  const index = submit.findIndex(b => parseInt(b.id) === blogId);
+app.post("/update/:id", async (req, res) => {
+const blogId = parseInt(req.params.id);
+  const { Title, Author, Content } = req.body;
 
-  if (index === -1) {
-    return res.status(404).send("Blog not found");
+  try {
+    await db.query(
+      "UPDATE blogs SET title = $1, author = $2, blog = $3 WHERE id = $4",
+      [Title, Author, Content, blogId]
+    );
+    res.redirect("/");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error updating blog");
   }
-    submit[index].title = req.body.Title;
-    submit[index].author = req.body.Author;
-    submit[index].content = req.body.Content;
-    saveBlogsToFile();
-  res.redirect("/");
 });
 
 
-app.post("/delete/:id", (req, res) => {
+app.post("/delete/:id", async (req, res) => {
   const blogId = parseInt(req.params.id);
-  const index = submit.findIndex(b => parseInt(b.id) === blogId);
-
-  if (index !== -1) {
-    submit.splice(index, 1);
+  try {
+    await db.query("DELETE FROM blogs WHERE id = $1", [blogId]);
+    res.redirect("/");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error deleting blog");
   }
-  saveBlogsToFile();
-  res.redirect("/");
 });
 
 app.get("/faqs", (req, res) => {

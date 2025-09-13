@@ -18,6 +18,7 @@
     "express": "^5.1.0",
     "fs-extra": "^11.3.0",
     "method-override": "^3.0.0",
+    "pg": "^8.16.3",
     "textract": "^0.20.0"
   }
 }
